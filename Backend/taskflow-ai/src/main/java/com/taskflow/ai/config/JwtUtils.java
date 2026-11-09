@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
@@ -15,25 +15,27 @@ public class JwtUtils {
     private String jwtSecret;
 
     @Value("${app.jwt.expiration-ms:86400000}")
-    private int jwtExpirationMs;
+    private long jwtExpirationMs;
 
-    private Key getSigningKey(){
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    private SecretKey getSigningKey(){
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String username, String role){
+
+        Date now = new Date();
         return Jwts.builder()
-                .setSubject(username)
+                .subject(username)
                 .claim("role", role)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + jwtExpirationMs))
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
     public String getUsernameFromToken(String token){
         return Jwts.parser()
-                .verifyWith((SecretKey)getSigningKey())
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
@@ -43,7 +45,7 @@ public class JwtUtils {
     public boolean validateToken(String token){
         try{
             Jwts.parser()
-                    .verifyWith((SecretKey) getSigningKey())
+                    .verifyWith(getSigningKey())
                     .build()
                     .parseSignedClaims(token);
 
