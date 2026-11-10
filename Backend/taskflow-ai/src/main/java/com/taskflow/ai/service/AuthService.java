@@ -1,5 +1,6 @@
 package com.taskflow.ai.service;
 
+import com.taskflow.ai.entity.User;
 import com.taskflow.ai.config.JwtUtils;
 import com.taskflow.ai.dto.AuthResponse;
 import com.taskflow.ai.dto.LoginRequest;
